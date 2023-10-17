@@ -1,0 +1,33 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components
+
+<PageTitle>Inicio</PageTitle>
+
+<div class="container text-center">
+    <div class="header-bar">
+        <h1 class="title">Bienvenido a la Aplicación de Creación de Candidatos</h1>
+    </div>
+    <p class="description">
+        Esta aplicación está diseñada para ayudarte a gestionar y crear candidatos para tus procesos.
+        Puedes agregar, editar, ver detalles y eliminar candidatos de manera sencilla.
+    </p>
+    <p>
+        También puedes registrar la experiencia de los candidatos, lo que te permite llevar un seguimiento de su historial laboral.
+    </p>
+
+    <div style="text-align: center;">
+        <RadzenButton Text="Ver Candidatos" Icon="search" ButtonStyle="ButtonStyle.Primary" Click="IrACandidatos" />
+    </div>
+
+</div>
+
+
+@code 
+{
+    private void IrACandidatos()
+    {
+        // Redirige a la página de candidatos
+        NavigationManager.NavigateTo("Candidates");
+    }
+}

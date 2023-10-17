@@ -1,0 +1,192 @@
+﻿@page "/Candidates"
+@using ReclutamientoFrontend.Data.Models.Candidate;
+@inject ReclutamientoFrontend.Data.Services.Candidate.CandidatoService candidatoService;
+@inject NotificationService _notificationService
+@inject DialogService _dialogService
+
+<RadzenNotification />
+<RadzenDialog />
+<PageTitle>Candidatos</PageTitle>
+
+<div class="container">
+    <div class="header-bar">
+        <h1 class="title">Candidatos</h1>
+    </div>
+    <p class="description">
+        Esta página te permite gestionar los candidatos. Puedes crear nuevos candidatos, editar la información existente, ver detalles de cada candidato y eliminar candidatos.
+    </p>
+
+    <!-- Botón "Crear Candidato" -->
+    <div class="text-right">
+        <button class="btn btn-primary" @onclick="() => CrearCandidato(0)">
+            <i class="fa fa-plus"></i> Crear Candidato
+        </button>
+    </div>
+
+    <br />
+    <!-- Tabla de Candidatos -->
+
+
+    <RadzenDataGrid @ref="grid" TItem="CandidatoModel" Data="@listaDeCandidatos" AllowColumnResize="true" FilterMode="FilterMode.Simple"
+                    PageSize="10" AllowPaging="true" AllowSorting="true" ColumnWidth="200px" LogicalFilterOperator="LogicalFilterOperator.Or"
+                    EmptyText="No se encontraron registros." PagerHorizontalAlign="HorizontalAlign.Left">
+        <Columns>
+            <RadzenDataGridColumn TItem="CandidatoModel" Property="IdCandidate" Title="Id" />
+            <RadzenDataGridColumn TItem="CandidatoModel" Property="Name" Title="Nombre" />
+            <RadzenDataGridColumn TItem="CandidatoModel" Property="Surname" Title="Apellido" />
+            <RadzenDataGridColumn TItem="CandidatoModel" Property="Birthdate" Title="Fecha de Nacimiento" FormatString="{0:d}" />
+            <RadzenDataGridColumn TItem="CandidatoModel" Property="Email" Title="Email" />
+            <RadzenDataGridColumn TItem="CandidatoModel" Property="Email" Title="Acciones">
+                <Template Context="candidato">
+                    <div class="action-buttons">
+                        <button class="btn btn-info" @onclick="() => VerDetalle(candidato.IdCandidate)" title="Ver Detalles">
+                            <i class="fa fa-search" style="color: white;"></i>
+                        </button>
+                        <button class="btn btn-warning" @onclick="() => ActualizarCandidato(candidato.IdCandidate)" title="Actualizar">
+                            <i class="fa fa-pencil" style="color: white;"></i>
+                        </button>
+                        <button class="btn btn-danger" @onclick="() => EliminarCandidato(candidato.IdCandidate)" title="Eliminar">
+                            <i class="fa fa-trash" style="color: white;"></i>
+                        </button>
+                    </div>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+
+</div>
+
+@code {
+    // private NotificationMessage notification;
+    // private readonly NotificationService _notificationService;
+
+    List<CandidatoModel> listaDeCandidatos = new();
+    RadzenDataGrid<CandidatoModel> grid;
+    private CandidatoModel candidato = new CandidatoModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        listaDeCandidatos = await candidatoService.GetAllCandidatos();
+    }
+
+    private async Task CrearCandidato(int id, bool consulta = false)
+    {
+        string title = "";
+        candidato = await candidatoService.GetCandidatoById(id);
+        if (id == 0)
+        {
+            title = "Crear Nuevo Candidato";
+        }
+        else if (consulta)
+        {
+            title = "Consultar Candidato";
+        }
+        else
+        {
+            title = "Actualizar Candidato";
+        }
+
+        var result = await _dialogService.OpenAsync(title, ds =>
+    @<div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Formulario de Candidato</h5>
+
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="Name">Nombre</label>
+                            <input type="text" class="form-control" id="Name" @bind="candidato.Name" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Surname">Apellido</label>
+                            <input type="text" class="form-control" id="Surname" @bind="candidato.Surname" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Birthdate">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" id="Birthdate" @bind="candidato.Birthdate" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Email">Email</label>
+                            <input type="email" class="form-control" id="Email" @bind="candidato.Email" />
+                        </div>
+                    </form>
+                </div>
+                <div class="container text-center">
+                    @if (!consulta)
+                    {
+                        <RadzenButton Text="Guardar" Click="() => ds.Close(true)" Style="width: 280px;" />
+
+                    }
+                    <br />
+                    <RadzenButton Text="Cancel" Click="() => ds.Close(false)" ButtonStyle="ButtonStyle.Light" Style="width: 280px;" />
+
+                </div>
+
+            </div>
+        </div>
+
+
+    </div>
+
+    );
+
+        if (result)
+        {
+            if (id == 0)
+            {
+                CandidatoCreateModel candidatoCreateModel = new CandidatoCreateModel()
+                    {
+                        Name = candidato.Name,
+                        Surname = candidato.Surname,
+                        Birthdate = candidato.Birthdate,
+                        Email = candidato.Email,
+                        InsertDate = DateTime.Now,
+                        ModifyDate = candidato.ModifyDate,
+                    };
+                await candidatoService.CreateCandidato(candidatoCreateModel);
+                _notificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Se creo el Candidato", Duration = 4000 });
+
+            }
+            else
+            {
+                candidato.ModifyDate = DateTime.Now;
+                await candidatoService.UpdateCandidato(id, candidato);
+                _notificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Se actualizo el Candidato", Duration = 4000 });
+
+            }
+            await LoadData();
+
+        }
+    }
+
+    private async Task VerDetalle(int id)
+    {
+        await CrearCandidato(id, true);
+        // Lógica para ver los detalles del candidato seleccionado
+    }
+
+    private async Task ActualizarCandidato(int id)
+    {
+        await CrearCandidato(id);
+        await LoadData();
+
+    }
+
+    private async Task EliminarCandidato(int id)
+    {
+        var status = await candidatoService.DeleteCandidato(id);
+        if (!status)
+        {
+            _notificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "No se pudo eliminar el candidato", Duration = 4000 });
+        }
+        await LoadData();
+    }
+}

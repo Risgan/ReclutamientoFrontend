@@ -1,0 +1,229 @@
+﻿@page "/Experience"
+
+@using ReclutamientoFrontend.Data.Models.Candidate;
+@using ReclutamientoFrontend.Data.Models.CandidateExperience;
+@inject ReclutamientoFrontend.Data.Services.Candidate.CandidatoService candidatoService;
+@inject ReclutamientoFrontend.Data.Services.CandidateExperience.CandidateExperienceService candidateExperienceService;
+@inject NotificationService _notificationService
+@inject DialogService _dialogService
+
+<RadzenNotification />
+<RadzenDialog />
+<PageTitle>Candidatos</PageTitle>
+
+<div class="container">
+    <div class="header-bar">
+        <h1 class="title">Experiencia Candidatos</h1>
+    </div>
+    <p class="description">
+        Esta página te permite gestionar la experiencia de los candidatos. Puedes crear, editar la información existente, ver detalles de cada experiencia y eliminar experiencia.
+    </p>
+
+    <br />
+    <RadzenDropDown Data="@listaDeCandidatos" Placeholder="-Seleccione-" Change="SelectCandidato" TextProperty="Name" ValueProperty="IdCandidate" TValue="int" @bind-Value="selectedCandidateId" />
+
+    <br />
+    @if (selectedCandidateId > 0)
+    {
+        <br />
+
+        <div class="text-right">
+            <button class="btn btn-primary" @onclick="() => CrearExperiencia(0)">
+                <i class="fa fa-plus"></i> Crear Experiencia Candidato
+            </button>
+        </div>
+    }
+    <!-- Botón "Crear Candidato" -->
+    
+
+    <br />
+    <!-- Tabla de Candidatos -->
+
+
+    <RadzenDataGrid @ref="grid" TItem="CandidatoExperienciaModel" Data="@listaDeExperiencia" AllowColumnResize="true" FilterMode="FilterMode.Simple"
+                    PageSize="10" AllowPaging="true" AllowSorting="true" ColumnWidth="200px" LogicalFilterOperator="LogicalFilterOperator.Or"
+                    EmptyText="No se encontraron registros." PagerHorizontalAlign="HorizontalAlign.Left">
+        <Columns>
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="IdCandidateExperience" Title="Id" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="IdCandidate" Title="Id Candidate" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="Company" Title="Company" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="Job" Title="Job" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="Salary" Title="Salary" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="BeginDate" Title="BeginDate" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="EndDate" Title="End Date" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="InsertDate" Title="Insert Date"  />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="ModifyDate" Title="Modify Date" />
+            <RadzenDataGridColumn TItem="CandidatoExperienciaModel" Property="IdCandidateExperience" Title="Acciones">
+                <Template Context="candidato">
+                    <div class="action-buttons">
+                        <button class="btn btn-info" @onclick="() => VerDetalle(candidato.IdCandidateExperience)" title="Ver Detalles">
+                            <i class="fa fa-search" style="color: white;"></i>
+                        </button>
+                        <button class="btn btn-warning" @onclick="() => ActualizarExperiencia(candidato.IdCandidateExperience)" title="Actualizar">
+                            <i class="fa fa-pencil" style="color: white;"></i>
+                        </button>
+                        <button class="btn btn-danger" @onclick="() => EliminarExperiencia(candidato.IdCandidateExperience)" title="Eliminar">
+                            <i class="fa fa-trash" style="color: white;"></i>
+                        </button>
+                    </div>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+
+</div>
+
+@code {
+    int selectedCandidateId;
+    List<CandidatoModel> listaDeCandidatos = new();
+
+    RadzenDataGrid<CandidatoExperienciaModel> grid;
+    List<CandidatoExperienciaModel> listaDeExperiencia = new();
+
+    private CandidatoExperienciaModel experiencia = new CandidatoExperienciaModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        listaDeCandidatos = await candidatoService.GetAllCandidatos();
+    }
+
+    private async Task CrearExperiencia(int id, bool consulta = false)
+    {
+        string title = "";
+        experiencia = await candidateExperienceService.GetExperienciaById(id);
+        if (id == 0)
+        {
+            title = "Crear Nueva Experiencia";
+        }
+        else if (consulta)
+        {
+            title = "Consultar Experiencia";
+        }
+        else
+        {
+            title = "Actualizar Experiencia";
+        }
+
+        var result = await _dialogService.OpenAsync(title, ds =>
+    @<div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Formulario de Experiencia</h5>
+
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="Name">Company</label>
+                            <input type="text" class="form-control" id="Company" @bind="experiencia.Company" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Surname">Job</label>
+                            <input type="text" class="form-control" id="Job" @bind="experiencia.Job" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Surname">Description</label>
+                            <input type="text" class="form-control" id="Description" @bind="experiencia.Description" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Surname">Salary</label>
+                            <input type="number" class="form-control" id="Salary" @bind="experiencia.Salary" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Birthdate">BeginDate</label>
+                            <input type="date" class="form-control" id="BeginDate" @bind="experiencia.BeginDate" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Birthdate">EndDate</label>
+                            <input type="date" class="form-control" id="EndDate" @bind="experiencia.EndDate" />
+                        </div>                       
+                    </form>
+                </div>
+                <div class="container text-center">
+                    @if (!consulta)
+                    {
+                        <RadzenButton Text="Guardar" Click="() => ds.Close(true)" Style="width: 280px;" />
+                        <br />
+
+                    }
+                    <br />
+                    <RadzenButton Text="Cancel" Click="() => ds.Close(false)" ButtonStyle="ButtonStyle.Light" Style="width: 280px;" />
+
+                </div>
+
+            </div>
+        </div>
+
+
+            </div>
+
+    );
+
+        if (result)
+        {
+            if (id == 0)
+            {
+                CandidatoExperienciaCreateModel candidatoExperienciaCreateModel = new CandidatoExperienciaCreateModel()
+                    {
+                        IdCandidate = experiencia.IdCandidate,
+                        Company = experiencia.Company,
+                        Job = experiencia.Job,
+                        Description = experiencia.Description,
+                        Salary = experiencia.Salary,
+                        BeginDate = experiencia.BeginDate,
+                        EndDate = experiencia.EndDate,
+                        InsertDate = DateTime.Now,
+                        ModifyDate = experiencia.ModifyDate,
+                    };
+                await candidateExperienceService.CreateExperiencia(candidatoExperienciaCreateModel);
+                _notificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Se creo la experiencia", Duration = 4000 });
+
+            }
+            else
+            {
+                experiencia.ModifyDate = DateTime.Now;
+                await candidateExperienceService.UpdateExperiencia(id, experiencia);
+                _notificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Se actualizo la experiencia", Duration = 4000 });
+
+            }
+            await LoadData();
+
+        }
+    }
+
+    private async Task VerDetalle(int id)
+    {
+        await CrearExperiencia(id, true);
+        // Lógica para ver los detalles del candidato seleccionado
+    }
+
+    private async Task ActualizarExperiencia(int id)
+    {
+        await CrearExperiencia(id);
+        await LoadData();
+
+    }
+
+    private async Task EliminarExperiencia(int id)
+    {
+        var status = await candidateExperienceService.DeleteExperiencia(id);
+        if (!status)
+        {
+            _notificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "No se pudo eliminar el candidato", Duration = 4000 });
+        }
+        await LoadData();
+    }
+
+    private async Task SelectCandidato()
+    {
+        listaDeExperiencia = await candidateExperienceService.GetAllExperiencia();
+        listaDeExperiencia = listaDeExperiencia.Where(x => x.IdCandidate == selectedCandidateId).ToList();
+    }
+}
